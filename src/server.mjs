@@ -1,44 +1,32 @@
 import express from 'express';
-import mongoose from 'mongoose';
-import cors from 'cors';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import https from 'https';
+import dotenv from 'dotenv';
 import fs from 'fs';
+import https from 'https';
+import profileRoutes from './routes/profileRoutes.mjs';
+import authRoutes from './routes/authRoutes.mjs';
 
-import config from './config.mjs';
-import authRoutes from './controllers/route.mjs';
-import authenticateToken from './controllers/auth.mjs';
-
-const env = process.env.NODE_ENV || 'development';
-const { port, mongodb } = config[env];
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.use(helmet());
-app.use(cors({ origin: 'http://localhost:3000' }));
+// Charger les certificats SSL
+const sslOptions = {
+  key: fs.readFileSync('./server.key'),
+  cert: fs.readFileSync('./server.cert')
+};
+
+// Middleware
 app.use(express.json());
-app.use(rateLimit({ windowMs: 60 * 60 * 1000, max: 100 }));
+// Routes
+app.use('/login', authRoutes);
+app.use('/profile', profileRoutes);
 
-mongoose.connect(mongodb, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log('MongoDB connecté');
-  const key = fs.readFileSync('server.key');
-  const cert = fs.readFileSync('server.cert');
-  https.createServer({ key, cert }, app).listen(port, () => {
-    console.log(`Serveur HTTPS sur https://localhost:${port}`);
-  });
-}).catch((err) => console.error('Erreur MongoDB :', err));
-
-app.use('/api/auth', authRoutes);
-
-app.get('/api/protected', authenticateToken, (req, res) => {
-  res.json({ message: `Accès sécurisé à ${req.user.email}` });
+app.get('/', (req, res) => {
+  res.send('API sécurisée avec JWT et HTTPS. Connectez-vous via /login');
 });
 
-app.use((err, req, res) => {
-  console.error(err);
-  return res.status(500).json({ error: 'Erreur serveur' });
+// Démarrer le serveur HTTPS
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`✅ Serveur HTTPS lancé sur https://localhost:${PORT}`);
 });

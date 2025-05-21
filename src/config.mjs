@@ -1,12 +1,11 @@
-export default {
-  development: {
-    type: 'development',
-    port: 3000,
-    mongodb: 'mongodb+srv://thelmalum0:221994@efrei-m1.vktvy.mongodb.net/ecole'
-  },
-  production: {
-    type: 'production',
-    port: 3000,
-    mongodb: 'mongodb+srv://thelmalum0:221994@efrei-m1.vktvy.mongodb.net/ecole'
-  }
-};
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+console.log('RANDOMMER_API_KEY chargée :', process.env.RANDOMMER_API_KEY);
+
+export default function getRandommerHeaders() {
+  return {
+    'X-Api-Key': process.env.RANDOMMER_API_KEY
+  };
+}
